@@ -6,29 +6,54 @@ const authenticate = require('../authenticate');
 const router = express.Router();
 
 /* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
-});
 
-router.post('/signup', (req, res) => {
-    User.register(
-        new User({username: req.body.username}),
-        req.body.password,
-        err => {
-            if (err) {
-                res.statusCode = 500;
-                res.setHeader('Content-Type', 'application/json');
-                res.json({err: err});
-            } else {
-                passport.authenticate('local')(req, res, () => {
-                    res.statusCode = 200;
-                    res.setHeader('Content-Type', 'application/json');
-                    res.json({success: true, status: 'Registration Successful!'});
-                });
-            }
-        }
-    );
 
+router
+  .route("/")
+  .get(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+    User.find({})
+      .then((users) => {
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        res.json(users);
+      })
+      .catch((err) => next(err));
+  });
+
+  
+// router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
+//   User.find({})
+//   .then( (users) => {
+//       // res.statusCode = 200;
+//       // res.setHeader("Content-Type", "application/json");
+//       res.json(users);
+//   })
+//   .catch( (err) => next(err));
+// });
+
+
+router.post("/signup", async (req, res) => {
+  try {
+    const user = new User({ username: req.body.username });
+    await User.register(user, req.body.password);
+
+    try {
+      await user.save();
+      passport.authenticate("local")(req, res, () => {
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        res.json({ success: true, status: "Registration Successful!" });
+      });
+    } catch (saveErr) {
+      res.statusCode = 500;
+      res.setHeader("Content-Type", "application/json");
+      res.json({ err: saveErr });
+    }
+  } catch (registerErr) {
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "application/json");
+    res.json({ err: registerErr });
+  }
 });
 
 
