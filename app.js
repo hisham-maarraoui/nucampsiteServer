@@ -1,10 +1,13 @@
 var createError = require('http-errors');
 var express = require('express');
+const session = require('express-session');
 var path = require('path');
 var logger = require('morgan');
 
+
 const passport = require('passport');
 const config = require('./config');
+const FileStore = require('session-file-store')(session);
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -12,6 +15,7 @@ const campsiteRouter = require('./routes/campsiteRouter');
 const promotionRouter = require('./routes/promotionRouter');
 const partnerRouter = require('./routes/partnerRouter');
 const uploadRouter = require('./routes/uploadRouter');
+
 
 const mongoose = require('mongoose');
 
@@ -33,6 +37,16 @@ app.all('*', (req, res, next) => {
         res.redirect(301, `https://${req.hostname}:${app.get('secPort')}${req.url}`);
     }
 });
+
+
+app.use(session({
+  name: 'session-id',
+  secret: '12345-67890-09876-54321',
+  saveUninitialized: false,
+  resave: false,
+  store: new FileStore()
+}));
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
